@@ -1,12 +1,14 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 class Media {
   final String title;
   final String path;
   final String artist;
   final String album;
-  final String? thumbnail;
+  final Uint8List? thumbnail;
   final Duration duration;
   Media({
     required this.title,
@@ -23,7 +25,7 @@ class Media {
     String? path,
     String? artist,
     String? album,
-    String? thumbnail,
+    Uint8List? thumbnail,
     Duration? duration,
   }) {
     return Media(
@@ -53,7 +55,7 @@ class Media {
       path: map['path'] as String,
       artist: map['artist'] as String,
       album: map['album'] as String,
-      thumbnail: map['thumbnail'] != null ? map['thumbnail'] as String : null,
+      thumbnail: map['thumbnail'] != null ? map['thumbnail'] as Uint8List : null,
       duration: Duration(milliseconds: int.parse(map['duration'])),
     );
   }

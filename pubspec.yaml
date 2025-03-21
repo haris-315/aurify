@@ -43,11 +43,10 @@ dependencies:
   flutter_animate: ^4.5.2
   file_picker: ^9.2.1
   shimmer: ^3.0.0
-  flutter_media_metadata: ^1.0.0+1
   permission_handler: ^11.4.0
   path_provider: ^2.1.5
   video_player: ^2.9.3
-  video_thumbnail: ^0.5.3
+  metadata_god: ^1.0.0
 
 dev_dependencies:
   flutter_test:

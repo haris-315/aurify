@@ -1,21 +1,48 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:metadata_god/metadata_god.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:aurify/core/models/media_model.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter_media_metadata/flutter_media_metadata.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
 
 class MediaScanner {
   Future<List<Media>> scanMediaFiles() async {
-    List<Media> mediaFiles = [];
-    Directory? directory = await getExternalStorageDirectory();
-
-    if (directory != null) {
-      mediaFiles = await _scanDirectory(directory);
+    // Let the user pick a folder
+    Directory? directory = await _pickFolder();
+    if (directory == null) {
+      return [];
     }
 
+    // Scan the directory and get media files
+    List<Media> mediaFiles = await _scanDirectory(directory);
     return mediaFiles;
   }
 
+  // Use FilePicker to let the user pick a directory
+  Future<Directory?> _pickFolder() async {
+    // Request storage permission first
+    await requestPermissions();
+
+    // Pick a folder from the file system
+    String? result = await FilePicker.platform.getDirectoryPath();
+
+    if (result != null) {
+      return Directory(result); // Return the folder path as a Directory object
+    }
+
+    return null; // If no folder selected
+  }
+
+  // Request storage permission
+  Future<void> requestPermissions() async {
+    if (await Permission.manageExternalStorage.request().isGranted) {
+      // Permissions granted
+    } else {
+      // Handle permission denied
+      print('Storage permission denied');
+    }
+  }
+
+  // Scan the directory for media files
   Future<List<Media>> _scanDirectory(Directory directory) async {
     List<Media> mediaFiles = [];
 
@@ -38,6 +65,7 @@ class MediaScanner {
     return mediaFiles;
   }
 
+  // Check if the file is a valid media file (audio/video)
   bool _isMediaFile(String path) {
     List<String> mediaExtensions = [
       '.mp3',
@@ -53,25 +81,21 @@ class MediaScanner {
     return mediaExtensions.contains(extension);
   }
 
+  // Get metadata of a media file (title, artist, album, duration, thumbnail)
   Future<Media> _getMediaMetadata(File file) async {
     try {
-      Metadata metadata = await MetadataRetriever.fromFile(file);
-      String? thumbnailPath;
-      if (file.path.endsWith('.mp4') || file.path.endsWith('.mkv')) {
-        thumbnailPath = await VideoThumbnail.thumbnailFile(
-          video: file.path,
-          imageFormat: ImageFormat.JPEG,
-          maxWidth: 120,
-          quality: 50,
-        );
-      }
+      var metadata = await MetadataGod.readMetadata(file: file.path);
+
       return Media(
-        title: metadata.trackName ?? file.path.split('/').last,
-        artist: metadata.trackArtistNames?.join(', ') ?? 'Unknown',
-        album: metadata.albumName ?? 'Unknown',
-        duration: Duration(milliseconds: metadata.trackDuration ?? 0),
+        title: metadata.title ?? file.path.split('/').last,
+        artist: metadata.artist ?? 'Unknown',
+        album: metadata.album ?? 'Unknown',
+        duration:
+            metadata.duration != null
+                ? Duration(milliseconds: metadata.duration!.inMilliseconds)
+                : Duration.zero,
         path: file.path,
-        thumbnail: thumbnailPath,
+        thumbnail: metadata.picture?.data,
       );
     } catch (e) {
       return Media(
